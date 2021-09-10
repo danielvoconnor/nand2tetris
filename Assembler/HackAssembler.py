@@ -1,5 +1,7 @@
+import sys
 
-filename = 'MaxL.asm'
+fname = sys.argv[1]
+print('filename: ', fname)
 
 def int_to_binary(m):
 
@@ -109,8 +111,8 @@ def translate_jump(jump):
     elif jump == 'JMP':
         return '111'
 
-with open(filename) as file:
-    lines = file.readlines()
+f = open(fname)
+lines = f.readlines()
 
 output_lines = []
 count = 0
@@ -125,9 +127,9 @@ for line in lines:
     if line[0] == '@':
         address = int(line[1:])
         bits = '0' + int_to_binary(address)
-        output_lines.append(bits)
-        print('Full line: ', line)
-        print('\n')
+        output_lines.append(bits + '\n')
+#        print('Full line: ', line)
+#        print('\n')
 
     else:
         
@@ -147,21 +149,25 @@ for line in lines:
             comp = comp_and_jump
             jump = ''
             
-        print('Full line: ', line)
-        print('dest: ', dest, '(', translate_dest(dest),')')
-        print('comp: ', comp, '(', translate_comp(comp), ')')
-        print('jump: ', jump, '(', translate_jump(jump), ')')
-        print('\n')
+#        print('Full line: ', line)
+#        print('dest: ', dest, '(', translate_dest(dest),')')
+#        print('comp: ', comp, '(', translate_comp(comp), ')')
+#        print('jump: ', jump, '(', translate_jump(jump), ')')
+#        print('\n')
 
         dest_bits = translate_dest(dest)
         comp_bits = translate_comp(comp)
         jump_bits = translate_jump(jump)
 
-        output_lines.append('111' + dest_bits + comp_bits + jump_bits)
+        output_lines.append('111' + comp_bits + dest_bits + jump_bits + '\n')
 
     count += 1
 
-
+fname_out = fname[:-4] + '.hack'
+print('fname_out: ', fname_out)
+target = open(fname_out,'w')
+target.writelines(output_lines)
+target.close()
 
 
 
