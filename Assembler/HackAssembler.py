@@ -1,10 +1,57 @@
 import sys
 
-fname = sys.argv[1]
+#fname = sys.argv[1]
+fname = 'Max.asm'
 print('filename: ', fname)
 f = open(fname)
-lines = f.readlines()
+lines_raw = f.readlines()
 f.close()
+
+# Remove comments and all whitespace
+lines = []
+for line in lines_raw:
+
+    line = line.partition('//')[0]
+    line = ''.join(line.split())
+    if line:
+        lines.append(line)
+
+# Create symbol table
+symbol_table = dict()
+symbol_table['R0'] = 0
+symbol_table['R1'] = 1
+symbol_table['R2'] = 2
+symbol_table['R3'] = 3
+symbol_table['R4'] = 4
+symbol_table['R5'] = 5
+symbol_table['R6'] = 6
+symbol_table['R7'] = 7
+symbol_table['R8'] = 8
+symbol_table['R9'] = 9
+symbol_table['R10'] = 10
+symbol_table['R11'] = 11
+symbol_table['R12'] = 12
+symbol_table['R13'] = 13
+symbol_table['R14'] = 14
+symbol_table['R15'] = 15
+symbol_table['SP'] = 0
+symbol_table['LCL'] = 1
+symbol_table['ARG'] = 2
+symbol_table['THIS'] = 3
+symbol_table['THAT'] = 4
+
+line_number = 0
+for line in lines:
+
+    if line[0] == '(':
+        symbol = line[1:-1]
+        symbol_table[symbol] = line_number + 1
+
+    line_number += 1
+
+import sys
+sys.exit()
+print('HELLO')
 
 def int_to_binary(m):
 
