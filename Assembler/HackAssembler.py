@@ -2,6 +2,9 @@ import sys
 
 fname = sys.argv[1]
 print('filename: ', fname)
+f = open(fname)
+lines = f.readlines()
+f.close()
 
 def int_to_binary(m):
 
@@ -110,9 +113,6 @@ def translate_jump(jump):
         return '110'
     elif jump == 'JMP':
         return '111'
-
-f = open(fname)
-lines = f.readlines()
 
 output_lines = []
 count = 0
