@@ -1,7 +1,6 @@
 
 filename = 'MaxL.asm'
 
-
 def int_to_binary(m):
 
     # m is an integer between 0 and 32,767
@@ -154,7 +153,11 @@ for line in lines:
         print('jump: ', jump, '(', translate_jump(jump), ')')
         print('\n')
 
+        dest_bits = translate_dest(dest)
+        comp_bits = translate_comp(comp)
+        jump_bits = translate_jump(jump)
 
+        output_lines.append('111' + dest_bits + comp_bits + jump_bits)
 
     count += 1
 
