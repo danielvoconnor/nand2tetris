@@ -215,7 +215,7 @@ for line in lines:
 
     count += 1
 
-fname_out = fname[:-4] + '_dvo.hack'
+fname_out = fname[:-4] + '.hack'
 print('fname_out: ', fname_out)
 target = open(fname_out,'w')
 target.writelines(output_lines)
