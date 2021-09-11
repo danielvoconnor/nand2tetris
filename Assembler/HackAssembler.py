@@ -1,20 +1,19 @@
 import sys
 
-#fname = sys.argv[1]
-fname = 'Max.asm'
+fname = sys.argv[1]
 print('filename: ', fname)
 f = open(fname)
 lines_raw = f.readlines()
 f.close()
 
 # Remove comments and all whitespace
-lines = []
+lines_trimmed = []
 for line in lines_raw:
 
     line = line.partition('//')[0]
     line = ''.join(line.split())
     if line:
-        lines.append(line)
+        lines_trimmed.append(line)
 
 # Create symbol table
 symbol_table = dict()
@@ -39,19 +38,19 @@ symbol_table['LCL'] = 1
 symbol_table['ARG'] = 2
 symbol_table['THIS'] = 3
 symbol_table['THAT'] = 4
+symbol_table['SCREEN'] = 16384
+symbol_table['KBD'] = 24576
 
+lines = []
 line_number = 0
-for line in lines:
+for line in lines_trimmed:
 
     if line[0] == '(':
         symbol = line[1:-1]
-        symbol_table[symbol] = line_number + 1
-
-    line_number += 1
-
-import sys
-sys.exit()
-print('HELLO')
+        symbol_table[symbol] = line_number
+    else: 
+        lines.append(line)
+        line_number += 1
 
 def int_to_binary(m):
 
@@ -160,23 +159,29 @@ def translate_jump(jump):
         return '110'
     elif jump == 'JMP':
         return '111'
+    else:
+        print('ERROR: JUMP NOT RECOGNIZED')
+        return -1
 
+next_free_address = 16
 output_lines = []
 count = 0
 for line in lines:
 
-    line = line.partition('//')[0]
-#    breakpoint()
-    line = ''.join(line.split()) # Remove all white space from the line
-    if not line:
-        continue
-
     if line[0] == '@':
-        address = int(line[1:])
+
+        s = line[1:]
+        if s[0].isdigit():
+            address = int(s)
+        elif s in symbol_table:
+            address = symbol_table[s]
+        else:
+            address = next_free_address
+            symbol_table[s] = address
+            next_free_address += 1
+
         bits = '0' + int_to_binary(address)
         output_lines.append(bits + '\n')
-#        print('Full line: ', line)
-#        print('\n')
 
     else:
         
@@ -210,7 +215,7 @@ for line in lines:
 
     count += 1
 
-fname_out = fname[:-4] + '.hack'
+fname_out = fname[:-4] + '_dvo.hack'
 print('fname_out: ', fname_out)
 target = open(fname_out,'w')
 target.writelines(output_lines)
