@@ -1,23 +1,24 @@
 import sys
 
+push_D = ['@SP','A=M','M=D','@SP','M=M+1']
+segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
 
 def write_push(segment, i):
 
-    if segment == 'constant':
+    if segment in ['local', 'argument', 'this', 'that']:
+        
+        seg_name = segment_names[segment]
+        comment = ['// push ' + segment + ' ' + str(i)]
+        commands = ['@'+str(i),'D=A','@'+seg_name,'A=M+D','D=M'] + push_D
+        return comment + commands
+    elif segment == 'pointer':
         return 0
-    else:
-        return ['//push ' + segment + ' ' + str(i),
-                '@'+str(i),
-                'D=A',
-                '@'+segment,
-                'A=M+D',
-                'D=M',
-                '@SP',
-                'A=M',
-                'M=D',
-                '@SP',
-                'M=M+1']
+    elif segment == 'constant':
 
+        comment = ['// push constant ' + str(i)]
+        commands = ['@'+str(i),'D=A'] + push_D
+        return comment + commands
+    
 
 fname = sys.argv[1]
 print('filename: ', fname)
