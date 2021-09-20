@@ -4,18 +4,28 @@ push_D = ['@SP','A=M','M=D','@SP','M=M+1']
 segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
 
 def write_push(segment, i):
+    comment = ['// push ' + segment + ' ' + str(i)]
 
     if segment in ['local', 'argument', 'this', 'that']:
-        
         seg_name = segment_names[segment]
-        comment = ['// push ' + segment + ' ' + str(i)]
         commands = ['@'+str(i),'D=A','@'+seg_name,'A=M+D','D=M'] + push_D
         return comment + commands
     elif segment == 'pointer':
-        return 0
+
+        if i == 0:
+            commands = ['@'+'THIS','D=A'] + push_D
+        elif i == 1:
+            commands = ['@'+'THAT','D=A'] + push_D
+        else:
+            print('ERROR: POINTER INDEX SHOULD BE 0 OR 1')
+
+        return comment + commands
+    elif segment == 'temp':
+        # PICK UP HERE.
+
+            
     elif segment == 'constant':
 
-        comment = ['// push constant ' + str(i)]
         commands = ['@'+str(i),'D=A'] + push_D
         return comment + commands
     
