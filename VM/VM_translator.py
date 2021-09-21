@@ -59,14 +59,13 @@ def write_pop(segment, i):
             commands = pop_to_D + ['@THAT','M=D']
         else:
             print('ERROR: POINTER INDEX SHOULD BE 0 OR 1')
+
     elif segment == 'temp':
         put_addr_in_R13 = ['@'+str(i),'D=A','@5','D=D+A','@R13','M=D']
         commands = put_addr_in_R13 + pop_to_D + ['@R13','A=M','M=D']
-    elif segment == 'constant':
-        #PICK UP HERE
-        commands = ['@'+str(i),'D=A'] + push_D
+
     elif segment == 'static':
-        commands = ['@' + fname_without_path + '.' + str(i), 'D = M'] + push_D
+        commands = pop_to_D + ['@'+fname_without_path + '.' + str(i),'M=D']
 
     return comment + commands
  
