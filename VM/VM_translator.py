@@ -27,9 +27,9 @@ def write_push(segment, i):
         commands = ['@'+str(i),'D=A','@'+seg_name,'A=M+D','D=M'] + push_D
     elif segment == 'pointer':
         if i == 0:
-            commands = ['@'+'THIS','D=A'] + push_D
+            commands = ['@'+'THIS','D=M'] + push_D
         elif i == 1:
-            commands = ['@'+'THAT','D=A'] + push_D
+            commands = ['@'+'THAT','D=M'] + push_D
         else:
             print('ERROR: POINTER INDEX SHOULD BE 0 OR 1')
     elif segment == 'temp':
@@ -40,12 +40,36 @@ def write_push(segment, i):
         commands = ['@' + fname_without_path + '.' + str(i), 'D = M'] + push_D
 
     return comment + commands
-    
+   
+#pop_to_R13 = ['@SP','M=M-1', 'A=M', 'D=M', '@R13', 'M=D']
+pop_to_D = ['@SP','M=M-1', 'A=M', 'D=M']
 def write_pop(segment, i):
 
     comment = ['// pop ' + segment + ' ' + str(i)]
-    # PICK UP HERE
 
+    if segment in ['local', 'argument', 'this', 'that']:
+        seg_name = segment_names[segment]
+        put_addr_in_R13 = ['@'+str(i),'D=A','@'+seg_name,'D=D+M','@R13','M=D']
+        commands = put_addr_in_R13 + pop_to_D + ['@R13','A=M','M=D']
+
+    elif segment == 'pointer':
+        if i == 0:
+            commands = pop_to_D + ['@THIS','M=D']
+        elif i == 1:
+            commands = pop_to_D + ['@THAT','M=D']
+        else:
+            print('ERROR: POINTER INDEX SHOULD BE 0 OR 1')
+    elif segment == 'temp':
+        put_addr_in_R13 = ['@'+str(i),'D=A','@5','D=D+A','@R13','M=D']
+        commands = put_addr_in_R13 + pop_to_D + ['@R13','A=M','M=D']
+    elif segment == 'constant':
+        #PICK UP HERE
+        commands = ['@'+str(i),'D=A'] + push_D
+    elif segment == 'static':
+        commands = ['@' + fname_without_path + '.' + str(i), 'D = M'] + push_D
+
+    return comment + commands
+ 
 
 
 
