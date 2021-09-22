@@ -68,9 +68,16 @@ def write_pop(segment, i):
         commands = pop_to_D + ['@'+fname_without_path + '.' + str(i),'M=D']
 
     return comment + commands
- 
 
+op_symbols = {'add':'+','sub':'-'}
+def write_arithmetic(operation):
 
+    if operation in ['add','sub']:
+        op = op_symbols[operation]
+        commands = ['@SP','M=M-1','A=M','D=D' + op + 'M']
+        return pop_to_D + commands + push_D
+    else:
+        return 0
 
 for line in lines_trimmed:
 
