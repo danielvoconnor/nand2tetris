@@ -16,8 +16,9 @@ for line in lines_raw:
     if line.strip():
         lines_trimmed.append(line)
 
-push_D = ['@SP','A=M','M=D','@SP','M=M+1']
+push_D = ['#Now we push D','@SP','A=M','M=D','@SP','M=M+1','#Finished push D']
 segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
+logic_op_count = 0
 
 def write_push(segment, i):
     comment = ['// push ' + segment + ' ' + str(i)]
@@ -42,7 +43,7 @@ def write_push(segment, i):
     return comment + commands
    
 #pop_to_R13 = ['@SP','M=M-1', 'A=M', 'D=M', '@R13', 'M=D']
-pop_to_D = ['@SP','M=M-1', 'A=M', 'D=M']
+pop_to_D = ['#Now we pop to D','@SP','M=M-1', 'A=M', 'D=M','#Finished popping to D']
 def write_pop(segment, i):
 
     comment = ['// pop ' + segment + ' ' + str(i)]
@@ -69,16 +70,34 @@ def write_pop(segment, i):
 
     return comment + commands
 
-op_symbols = {'add':'+','sub':'-'}
+op_symbols = {'add':'+','sub':'-','and':'&','or':'|','neg':'-','not':'!'}
 def write_arithmetic(operation):
 
-    if operation in ['add','sub']:
-        op = op_symbols[operation]
-        commands = ['@SP','M=M-1','A=M','D=D' + op + 'M']
-        return pop_to_D + commands + push_D
-    else:
-        return 0
+    comment = ['#'+operation]
 
+    if operation in ['add','sub','and','or']:
+        op = op_symbols[operation]
+        commands = ['@SP','A=M-1','M=M' + op + 'D']
+        return pop_to_D + commands
+    elif operation in ['neg','not']:
+        op = op_symbols[operation]
+        commands = ['@SP','A=M-1','M=' + op + 'M']
+    elif operation == 'eq':
+        global logic_op_count
+        true_label = 'PUSHTRUE' + str(logic_op_count)
+        finished_op_label = 'FINISHEDLOGICOP'+str(logic_op_count)
+        logic_op_count += 1
+        commands = pop_to_D + ['@SP','A=M-1','D=M-D','@'+true_label,'D;JEQ'] + \
+                   ['@SP','A=M-1','M=0','@'+finished_op_label,'0;JMP'] + \
+                   ['(' + true_label + ')','@SP','A=M-1','M=-1'] + \
+                   ['(' + finished_op_label + ')']
+    elif operation == 'gt':
+        # PICK UP HERE.
+        commands = []
+    return comment + commands
+
+
+check = write_arithmetic('eq')
 for line in lines_trimmed:
 
     print(line.split())
