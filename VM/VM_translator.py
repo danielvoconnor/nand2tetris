@@ -1,5 +1,7 @@
 import sys
 
+# PICK UP HERE. TEST THIS CODE.
+
 # Read in the code
 fname = sys.argv[1] # fname may or may not contain a full path.
 print('filename: ', fname)
@@ -16,7 +18,8 @@ for line in lines_raw:
     if line.strip():
         lines_trimmed.append(line)
 
-push_D = ['#Now we push D','@SP','A=M','M=D','@SP','M=M+1','#Finished push D']
+infinite_loop = ['(INFINITELOOP)','@INFINITELOOP','0;JMP']
+push_D = ['// Now we push D','@SP','A=M','M=D','@SP','M=M+1','// Finished push D']
 segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
 logic_op_count = 0
 
@@ -44,7 +47,7 @@ def write_push(segment, i):
     return comment + commands
    
 #pop_to_R13 = ['@SP','M=M-1', 'A=M', 'D=M', '@R13', 'M=D']
-pop_to_D = ['#Now we pop to D','@SP','M=M-1', 'A=M', 'D=M','#Finished popping to D']
+pop_to_D = ['// Now we pop to D','@SP','M=M-1', 'A=M', 'D=M','// Finished popping to D']
 def write_pop(segment, i):
     # I'll assume i is already a string, rather than an int
 
@@ -76,7 +79,7 @@ op_symbols = {'add':'+','sub':'-','and':'&','or':'|','neg':'-','not':'!'}
 jump_commands = {'eq':'D;JEQ','gt':'D;JGT','lt':'D;JLT'}
 def write_arithmetic(operation):
 
-    comment = ['#'+operation]
+    comment = ['// '+operation]
     global logic_op_count
 
     if operation in ['add','sub','and','or']:
@@ -115,7 +118,16 @@ for line in lines_trimmed:
         segment = words[1]
         i = words[2]
         hack_code = hack_code + write_pop(segment,i)
+    elif words[0] in ['add','sub','neg','eq','gt','lt','and','or','not']:
+        hack_code = hack_code + write_arithmetic(words[0])
 
+hack_code = hack_code + infinite_loop
+hack_code = [s + '\n' for s in hack_code]
+fname_out = fname[:-3] + '.asm'
+print('fname_out: ', fname_out)
+target = open(fname_out,'w')
+target.writelines(hack_code)
+target.close()
 
 
 
