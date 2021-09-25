@@ -18,6 +18,7 @@ for line in lines_raw:
     if line.strip():
         lines_trimmed.append(line)
 
+initialize_SP = ['// Initialize SP','@256','D=A','@SP','M=D']
 infinite_loop = ['(INFINITELOOP)','@INFINITELOOP','0;JMP']
 push_D = ['// Now we push D','@SP','A=M','M=D','@SP','M=M+1','// Finished push D']
 segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
@@ -106,7 +107,7 @@ def write_arithmetic(operation):
     return comment + commands
 
 
-hack_code = []
+hack_code = initialize_SP
 for line in lines_trimmed:
 
     words = line.split()
