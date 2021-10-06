@@ -1,23 +1,5 @@
 import sys
 
-# PICK UP HERE. TEST THIS CODE.
-
-# Read in the code
-fname = sys.argv[1] # fname may or may not contain a full path.
-print('filename: ', fname)
-f = open(fname)
-lines_raw = f.readlines()
-f.close()
-fname_without_path = fname.split('/')[-1][:-3] # '/Users/dvo/foo.VM' becomes 'foo', for example.
-
-# Remove comments and all whitespace
-lines_trimmed = []
-for line in lines_raw:
-
-    line = line.partition('//')[0]
-    if line.strip():
-        lines_trimmed.append(line)
-
 initialize_SP = ['// Initialize SP','@256','D=A','@SP','M=D']
 infinite_loop = ['(INFINITELOOP)','@INFINITELOOP','0;JMP']
 push_D = ['// Now we push D','@SP','A=M','M=D','@SP','M=M+1','// Finished push D']
@@ -106,6 +88,41 @@ def write_arithmetic(operation):
 
     return comment + commands
 
+def write_label(lbl, fun_name):
+    # fun_name is the name of the function that we are currently translating.
+
+    commands = ['(' + fun_name + '$' + lbl + ')']
+    return commands
+
+def write_goto(lbl, fun_name):
+
+    full_label = fun_name + '$' + lbl
+    commands = ['@' + full_label, '0;JMP']
+
+    return commands
+
+def write_if(lbl,fun_name):
+
+    full_label = fun_name + '$' + lbl
+    commands = pop_to_D + ['@' + full_label, '0;JNE']
+
+
+# Read in the code
+fname = sys.argv[1] # fname may or may not contain a full path.
+print('filename: ', fname)
+f = open(fname)
+lines_raw = f.readlines()
+f.close()
+fname_without_path = fname.split('/')[-1][:-3] # '/Users/dvo/foo.VM' becomes 'foo', for example.
+
+# Remove comments and all whitespace
+lines_trimmed = []
+for line in lines_raw:
+
+    line = line.partition('//')[0]
+    if line.strip():
+        lines_trimmed.append(line)
+
 
 hack_code = initialize_SP
 for line in lines_trimmed:
@@ -121,6 +138,17 @@ for line in lines_trimmed:
         hack_code = hack_code + write_pop(segment,i)
     elif words[0] in ['add','sub','neg','eq','gt','lt','and','or','not']:
         hack_code = hack_code + write_arithmetic(words[0])
+    elif words[0] == 'label':
+        lbl = words[1]
+        hack_code = hack_code + write_label(lbl,fun_name)
+    elif words[0] == 'goto':
+        lbl = words[1]
+        hack_code = hack_code + write_goto(lbl,fun_name)
+    elif words[0] == 'if-goto':
+        lbl = words[1]
+        hack_code = hack_code + write_if(lbl,fun_name)
+    else:
+        print('ERROR: words[0] not recognized!')
 
 hack_code = hack_code + infinite_loop
 hack_code = [s + '\n' for s in hack_code]
