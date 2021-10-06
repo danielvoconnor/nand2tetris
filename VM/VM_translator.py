@@ -104,8 +104,11 @@ def write_goto(lbl, fun_name):
 def write_if(lbl,fun_name):
 
     full_label = fun_name + '$' + lbl
-    commands = pop_to_D + ['@' + full_label, '0;JNE']
+    commands = pop_to_D + ['@' + full_label, 'D;JNE']
 
+    return commands
+
+############################# Now do the translation. #####################
 
 # Read in the code
 fname = sys.argv[1] # fname may or may not contain a full path.
@@ -123,7 +126,7 @@ for line in lines_raw:
     if line.strip():
         lines_trimmed.append(line)
 
-
+fun_name = 'Main.main'
 hack_code = initialize_SP
 for line in lines_trimmed:
 
