@@ -3,6 +3,7 @@ import sys
 initialize_SP = ['// Initialize SP','@256','D=A','@SP','M=D']
 infinite_loop = ['(INFINITELOOP)','@INFINITELOOP','0;JMP']
 push_D = ['// Now we push D','@SP','A=M','M=D','@SP','M=M+1','// Finished push D']
+push_0 = ['@SP','A=M','M=0','@SP','M=M+1']
 segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
 logic_op_count = 0
 
@@ -132,7 +133,10 @@ def write_call(fun_name, num_args,i):
 
 def write_function(fun_name, num_vars):
 
-    commands = ['(' + fun_name + ')']
+    loop_label = fun_name + '$push_zeros_loop'
+    increment_i = ['@i','M=M+1'] # is i used elsewhere in my assembly code? Is this name a conflict?
+    commands = ['(' + fun_name + ')', '@i','M=0','('+loop_label+')'] + push_0 \
+               + increment_i + ['@i','D=M','@' + str(num_vars),'D=D-A','@' + loop_label,'D;JLT']
 
     return commands
 
