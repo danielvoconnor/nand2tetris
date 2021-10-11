@@ -98,7 +98,8 @@ def write_label(lbl, fun_name):
 def write_goto(lbl, fun_name):
 
     full_label = fun_name + '$' + lbl
-    commands = ['@' + full_label, '0;JMP']
+    comment = ['// goto ' + full_label]
+    commands = comment + ['@' + full_label, '0;JMP']
 
     return commands
 
@@ -110,11 +111,13 @@ def write_if(lbl,fun_name):
     return commands
 
 def write_call(fun_name, num_args,i):
+    # This function translates the command: call fun_name num_args.
     # To understand what i is, see p. 163 of The Elements of Computing Systems:
     # "The handling of each call command within foo's code generates, and
     # injects into the assembly code stream, a symbol XXX.foo@ret.i, where i is
     # a running integer (one such symbol is generated for each call command within foo).
 
+    comment = ['// call ' + fun_name + ' ' + str(num_args)]
     return_label = fun_name + '$ret.' + str(i)
     push_return_addr = ['@' + return_label,'D=A'] + push_D
     push_LCL = ['@LCL','D=M'] + push_D
@@ -126,22 +129,52 @@ def write_call(fun_name, num_args,i):
     goto_f = ['@' + fun_name,'0;JMP']
     place_return_label = ['(' + return_label + ')']
 
-    commands = push_return_addr + push_LCL + push_ARG + push_THIS + push_THAT + reposition_ARG \
+    commands = comment + push_return_addr + push_LCL + push_ARG +\
+               push_THIS + push_THAT + reposition_ARG \
                + reposition_LCL + goto_f + place_return_label
 
     return commands
 
 def write_function(fun_name, num_vars):
+    # This function translates the command: function fun_name num_vars.
+    # The function fun_name has num_vars local variables.
+    # See p. 161 for pseudocode for write_function.
 
+    comment = ['//function ' + fun_name + ' ' + str(num_vars)]
     loop_label = fun_name + '$push_zeros_loop'
-    increment_i = ['@i','M=M+1'] # is i used elsewhere in my assembly code? Is this name a conflict?
-    commands = ['(' + fun_name + ')', '@i','M=0','('+loop_label+')'] + push_0 \
-               + increment_i + ['@i','D=M','@' + str(num_vars),'D=D-A','@' + loop_label,'D;JLT']
+    increment_count = ['@num_zeros_pushed','M=M+1'] # num_zeros_pushed += 1
+    commands = comment + ['(' + fun_name + ')', '@num_zeros_pushed','M=0','('+loop_label+')'] \
+               + push_0 + increment_count \
+               + ['@num_zeros_pushed','D=M','@'+ str(num_vars),'D=D-A','@' + loop_label,'D;JLT']
 
     return commands
 
+def write_return():
+    # This function translates the command: return.
+    # See p. 161 for pseudocode for this function.
+
+    # I think this function could be just a string, rather than a function.
+
+    comment = ['//return']
+    set_frame = ['// set frame','@LCL','D=M','@frame','M=D']
+    set_return = ['// set return','@5','D=A','@frame','A=M-D','D=M','@ret_addr','M=D']
+    set_ARG = pop_to_D + ['// set ARG','@ARG','A=M','M=D']
+    reposition_SP = ['// reposition SP','@ARG','D=M','@SP','M=D+1']
+    restore_THAT = ['// restore THAT','@frame','A=M-1','D=M','@THAT','M=D']
+    restore_THIS = ['// restore THIS','@2','D=A','@frame','A=M-D','D=M','@THIS','M=D']
+    restore_ARG = ['// restore ARG','@3','D=A','@frame','A=M-D','D=M','@ARG','M=D']
+    restore_LCL = ['// restore LCL','@4','D=A','@frame','A=M-D','D=M','@LCL','M=D']
+    goto_retAddr = ['//goto retAddr','@ret_addr','A=M','0;JMP']
+
+    commands = comment + set_frame + set_return + set_ARG + reposition_SP + restore_THAT + restore_THIS \
+               + restore_ARG + restore_LCL + goto_retAddr
+
+    return commands
+
+
 ############################# Now do the translation. #####################
-if False:
+if __name__ == '__main__':
+
     # Read in the code
     fname = sys.argv[1] # fname may or may not contain a full path.
     print('filename: ', fname)
@@ -158,7 +191,10 @@ if False:
         if line.strip():
             lines_trimmed.append(line)
 
-    fun_name = 'Main.main'
+    current_function = 'Main.main' # This is the current function we're translating
+    call_counter = 0 # call_counter counts the number of call statements we have translated so far
+                     # while we have been translating current_function.
+
     hack_code = initialize_SP
     for line in lines_trimmed:
 
@@ -175,13 +211,22 @@ if False:
             hack_code = hack_code + write_arithmetic(words[0])
         elif words[0] == 'label':
             lbl = words[1]
-            hack_code = hack_code + write_label(lbl,fun_name)
+            hack_code = hack_code + write_label(lbl,current_function)
         elif words[0] == 'goto':
             lbl = words[1]
-            hack_code = hack_code + write_goto(lbl,fun_name)
+            hack_code = hack_code + write_goto(lbl,current_function)
         elif words[0] == 'if-goto':
             lbl = words[1]
-            hack_code = hack_code + write_if(lbl,fun_name)
+            hack_code = hack_code + write_if(lbl,current_function)
+        elif words[0] == 'call':
+            hack_code = hack_code + write_call(words[1],words[2],call_counter)
+            call_counter += 1
+        elif words[0] == 'function':
+            current_function = words[1]
+            call_counter = 0
+            hack_code = hack_code + write_function(words[1],words[2])
+        elif words[0] == 'return':
+            hack_code = hack_code + write_return()
         else:
             print('ERROR: words[0] not recognized!')
 
