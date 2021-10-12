@@ -1,7 +1,7 @@
 import sys
-import os
 
-# infinite_loop = ['(INFINITELOOP)','@INFINITELOOP','0;JMP']
+initialize_SP = ['// Initialize SP','@256','D=A','@SP','M=D']
+infinite_loop = ['(INFINITELOOP)','@INFINITELOOP','0;JMP']
 push_D = ['// Now we push D','@SP','A=M','M=D','@SP','M=M+1','// Finished push D']
 push_0 = ['@SP','A=M','M=0','@SP','M=M+1']
 segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
@@ -113,10 +113,9 @@ def write_if(lbl,fun_name):
 def write_call(fun_name, num_args,i):
     # This function translates the command: call fun_name num_args.
     # To understand what i is, see p. 163 of The Elements of Computing Systems:
-    # "Let foo be a function within the file Xxx.vm.
     # "The handling of each call command within foo's code generates, and
-    # "injects into the assembly code stream, a symbol XXX.foo@ret.i, where i is
-    # "a running integer (one such symbol is generated for each call command within foo)."
+    # injects into the assembly code stream, a symbol XXX.foo@ret.i, where i is
+    # a running integer (one such symbol is generated for each call command within foo).
 
     comment = ['// call ' + fun_name + ' ' + str(num_args)]
     return_label = fun_name + '$ret.' + str(i)
@@ -140,9 +139,6 @@ def write_function(fun_name, num_vars):
     # This function translates the command: function fun_name num_vars.
     # The function fun_name has num_vars local variables.
     # See p. 161 for pseudocode for write_function.
-
-    # I THINK THERE IS A LOGIC ERROR HERE. THE CODE BELOW ALWAYS PUSHES AT LEAST ONE ZERO. FIX THIS.
-    # THEN CONTINUE INSPECTING THE FIBONACCI ELEMENT ASSEMBLY CODE.
 
     comment = ['//function ' + fun_name + ' ' + str(num_vars)]
     loop_label = fun_name + '$push_zeros_loop'
@@ -179,83 +175,65 @@ def write_return():
 ############################# Now do the translation. #####################
 if __name__ == '__main__':
 
-    # First create the bootstrap code (see p. 162 for pseudocode)
-    initialize_SP = ['// Initialize SP','@256','D=A','@SP','M=D']
-    call_Sys_init = ['// call Sys.init','@Sys.init','0;JMP'] # Is that sufficient?
-    hack_code = initialize_SP + call_Sys_init
+    # Read in the code
+    fname = sys.argv[1] # fname may or may not contain a full path.
+    print('filename: ', fname)
+    f = open(fname)
+    lines_raw = f.readlines()
+    f.close()
+    fname_without_path = fname.split('/')[-1][:-3] # '/Users/dvo/foo.VM' becomes 'foo', for example.
 
-    # Now translate all of the given .vm files.
-    s = sys.argv[1]
-    if s.endswith('.vm'):
-        fname_list = [s]
-        fname_out = s[:-3] + '.asm'
-    else:
-        fname_list = [s + '/' + fname for fname in os.listdir(s) if fname.endswith('.vm')]
-        if s[-1] == '/': s = s[:-1]
-        fname_out = s + '.asm'
-    print('fname_out is: ' + fname_out)
+    # Remove comments and all whitespace
+    lines_trimmed = []
+    for line in lines_raw:
 
-    for fname in fname_list:
+        line = line.partition('//')[0]
+        if line.strip():
+            lines_trimmed.append(line)
 
-        # Read in the code
-        print('Currently translating file: ', fname)
-        f = open(fname)
-        lines_raw = f.readlines()
-        f.close()
-        fname_without_path = fname.split('/')[-1][:-3] # '/Users/dvo/foo.VM' becomes 'foo', for example.
+    current_function = 'Main.main' # This is the current function we're translating
+    call_counter = 0 # call_counter counts the number of call statements we have translated so far
+                     # while we have been translating current_function.
 
-        # Remove comments and all whitespace
-        lines_trimmed = []
-        for line in lines_raw:
+    hack_code = initialize_SP
+    for line in lines_trimmed:
 
-            line = line.partition('//')[0]
-            if line.strip():
-                lines_trimmed.append(line)
+        words = line.split()
+        if words[0] == 'push':
+            segment = words[1]
+            i = words[2]
+            hack_code = hack_code + write_push(segment,i)
+        elif words[0] == 'pop':
+            segment = words[1]
+            i = words[2]
+            hack_code = hack_code + write_pop(segment,i)
+        elif words[0] in ['add','sub','neg','eq','gt','lt','and','or','not']:
+            hack_code = hack_code + write_arithmetic(words[0])
+        elif words[0] == 'label':
+            lbl = words[1]
+            hack_code = hack_code + write_label(lbl,current_function)
+        elif words[0] == 'goto':
+            lbl = words[1]
+            hack_code = hack_code + write_goto(lbl,current_function)
+        elif words[0] == 'if-goto':
+            lbl = words[1]
+            hack_code = hack_code + write_if(lbl,current_function)
+        elif words[0] == 'call':
+            hack_code = hack_code + write_call(words[1],words[2],call_counter)
+            call_counter += 1
+        elif words[0] == 'function':
+            current_function = words[1]
+            call_counter = 0
+            hack_code = hack_code + write_function(words[1],words[2])
+        elif words[0] == 'return':
+            hack_code = hack_code + write_return()
+        else:
+            print('ERROR: words[0] not recognized!')
 
-        current_function = '' # This is the current function we're translating. What is the best way to initialize this?
-        call_counter = 0 # call_counter counts the number of call statements we have translated so far
-                         # while we have been translating current_function.
-
-        for line in lines_trimmed:
-
-            words = line.split()
-            if words[0] == 'push':
-                segment = words[1]
-                i = words[2]
-                hack_code = hack_code + write_push(segment,i)
-            elif words[0] == 'pop':
-                segment = words[1]
-                i = words[2]
-                hack_code = hack_code + write_pop(segment,i)
-            elif words[0] in ['add','sub','neg','eq','gt','lt','and','or','not']:
-                hack_code = hack_code + write_arithmetic(words[0])
-            elif words[0] == 'label':
-                lbl = words[1]
-                hack_code = hack_code + write_label(lbl,current_function)
-            elif words[0] == 'goto':
-                lbl = words[1]
-                hack_code = hack_code + write_goto(lbl,current_function)
-            elif words[0] == 'if-goto':
-                lbl = words[1]
-                hack_code = hack_code + write_if(lbl,current_function)
-            elif words[0] == 'call':
-                hack_code = hack_code + write_call(words[1],words[2],call_counter)
-                call_counter += 1
-            elif words[0] == 'function':
-                current_function = words[1]
-                call_counter = 0
-                # fun_name = fname_without_path + '.' + current_function # I think this was unnecessary. 
-                                                                         # We can assume functions are already named that way.
-                num_vars = words[2]
-                hack_code = hack_code + write_function(current_function,num_vars)
-            elif words[0] == 'return':
-                hack_code = hack_code + write_return()
-            else:
-                print('ERROR: words[0] not recognized!')
-
-    # hack_code = hack_code + infinite_loop
+    hack_code = hack_code + infinite_loop
     hack_code = [s + '\n' for s in hack_code]
-
+    fname_out = fname[:-3] + '.asm'
+    print('fname_out: ', fname_out)
     target = open(fname_out,'w')
     target.writelines(hack_code)
     target.close()
