@@ -1,3 +1,7 @@
+# This code implements the virtual machine presented in chapters 7 and 8
+# of The Elements of Computing Systems (2nd edition) by Nisan and Schocken.
+# This book is also called ``nand2tetris". I'll sometimes refer to it by that name below.
+
 import sys
 import os
 
@@ -139,17 +143,27 @@ def write_call(fun_name, num_args,i):
 def write_function(fun_name, num_vars):
     # This function translates the command: function fun_name num_vars.
     # The function fun_name has num_vars local variables.
-    # See p. 161 for pseudocode for write_function.
-
-    # I THINK THERE IS A LOGIC ERROR HERE. THE CODE BELOW ALWAYS PUSHES AT LEAST ONE ZERO. FIX THIS.
-    # THEN CONTINUE INSPECTING THE FIBONACCI ELEMENT ASSEMBLY CODE.
+    # See p. 161 of nand2tetris for pseudocode for write_function.
 
     comment = ['//function ' + fun_name + ' ' + str(num_vars)]
-    loop_label = fun_name + '$push_zeros_loop'
+    # The block of code below had a logic error. It always pushed at least one zero.
+    #loop_label = fun_name + '$push_zeros_loop'
+    #increment_count = ['@num_zeros_pushed','M=M+1'] # num_zeros_pushed += 1
+    #commands = comment + ['(' + fun_name + ')', '@num_zeros_pushed','M=0','('+loop_label+')'] \
+    #           + push_0 + increment_count \
+    #           + ['@num_zeros_pushed','D=M','@'+ str(num_vars),'D=D-A','@' + loop_label,'D;JLT']
+
+    loop_start_label = fun_name + '$push_zeros_loop_start'
+    loop_end_label = fun_name + '$push_zeros_loop_end'
+    initialize_num_zeros_pushed = ['@num_zeros_pushed','M=0']
+    if_pushed_all_goto_end_of_loop = \
+            ['@num_zeros_pushed','D=M','@'+ str(num_vars),'D=D-A','@' + loop_end_label,'D;JEQ'] 
     increment_count = ['@num_zeros_pushed','M=M+1'] # num_zeros_pushed += 1
-    commands = comment + ['(' + fun_name + ')', '@num_zeros_pushed','M=0','('+loop_label+')'] \
-               + push_0 + increment_count \
-               + ['@num_zeros_pushed','D=M','@'+ str(num_vars),'D=D-A','@' + loop_label,'D;JLT']
+    commands =   comment \
+               + ['(' + fun_name + ')'] \
+               + initialize_num_zeros_pushed + ['('+loop_start_label+')'] \
+               + if_pushed_all_goto_end_of_loop + push_0 + increment_count \
+               + ['@' + loop_start_label,'0;JMP'] + ['(' + loop_end_label + ')']
 
     return commands
 
@@ -177,22 +191,23 @@ def write_return():
 
 
 ############################# Now do the translation. #####################
-if __name__ == '__main__':
+if True:
 
     # First create the bootstrap code (see p. 162 for pseudocode)
     initialize_SP = ['// Initialize SP','@256','D=A','@SP','M=D']
     call_Sys_init = ['// call Sys.init','@Sys.init','0;JMP'] # Is that sufficient?
     hack_code = initialize_SP + call_Sys_init
 
+    breakpoint()
     # Now translate all of the given .vm files.
     s = sys.argv[1]
     if s.endswith('.vm'):
         fname_list = [s]
         fname_out = s[:-3] + '.asm'
     else:
-        fname_list = [s + '/' + fname for fname in os.listdir(s) if fname.endswith('.vm')]
         if s[-1] == '/': s = s[:-1]
-        fname_out = s + '.asm'
+        fname_list = [s + '/' + fname for fname in os.listdir(s) if fname.endswith('.vm')]
+        fname_out = s + '/' + s.split('/')[-1] + '.asm'
     print('fname_out is: ' + fname_out)
 
     for fname in fname_list:
