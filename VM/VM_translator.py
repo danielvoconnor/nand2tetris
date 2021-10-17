@@ -6,7 +6,7 @@ import sys
 import os
 
 # infinite_loop = ['(INFINITELOOP)','@INFINITELOOP','0;JMP']
-push_D = ['// Now we push D','@SP','A=M','M=D','@SP','M=M+1','// Finished push D']
+push_D = ['@SP','A=M','M=D','@SP','M=M+1']
 push_0 = ['@SP','A=M','M=0','@SP','M=M+1']
 segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
 logic_op_count = 0
@@ -124,14 +124,15 @@ def write_call(fun_name, num_args,i):
 
     comment = ['// call ' + fun_name + ' ' + str(num_args)]
     return_label = fun_name + '$ret.' + str(i)
-    push_return_addr = ['@' + return_label,'D=A'] + push_D
-    push_LCL = ['@LCL','D=M'] + push_D
-    push_ARG = ['@ARG','D=M'] + push_D
-    push_THIS = ['@THIS','D=M'] + push_D
-    push_THAT = ['@THAT','D=M'] + push_D
-    reposition_ARG = ['@SP','D=M','@5','D=D-A','@' + str(num_args),'D=D-A'] + push_D
-    reposition_LCL = ['@SP','D=M','@LCL','M=D']
-    goto_f = ['@' + fun_name,'0;JMP']
+    push_return_addr = ['// Push return address','@' + return_label,'D=A'] + push_D
+    push_LCL = ['// Push LCL','@LCL','D=M'] + push_D
+    push_ARG = ['// Push ARG','@ARG','D=M'] + push_D
+    push_THIS = ['// Push THIS','@THIS','D=M'] + push_D
+    push_THAT = ['// Push THAT', '@THAT','D=M'] + push_D
+#    reposition_ARG = ['// Reposition ARG','@SP','D=M','@5','D=D-A','@' + str(num_args),'D=D-A'] + push_D # Why was I pushing D? Bug right?
+    reposition_ARG = ['// Reposition ARG','@SP','D=M','@5','D=D-A','@' + str(num_args),'D=D-A']
+    reposition_LCL = ['// Reposition LCL', '@SP','D=M','@LCL','M=D']
+    goto_f = ['// goto ' + fun_name,'@' + fun_name,'0;JMP']
     place_return_label = ['(' + return_label + ')']
 
     commands = comment + push_return_addr + push_LCL + push_ARG +\
@@ -176,7 +177,7 @@ def write_return():
     comment = ['//return']
     set_frame = ['// set frame','@LCL','D=M','@frame','M=D']
     set_return = ['// set return','@5','D=A','@frame','A=M-D','D=M','@ret_addr','M=D']
-    set_ARG = pop_to_D + ['// set ARG','@ARG','A=M','M=D']
+    set_ARG = pop_to_D + ['// set ARG','@ARG','A=M','M=D'] # The value to be returned is on top of the stack. We place it in ARG[0].
     reposition_SP = ['// reposition SP','@ARG','D=M','@SP','M=D+1']
     restore_THAT = ['// restore THAT','@frame','A=M-1','D=M','@THAT','M=D']
     restore_THIS = ['// restore THIS','@2','D=A','@frame','A=M-D','D=M','@THIS','M=D']
@@ -189,16 +190,17 @@ def write_return():
 
     return commands
 
-
+    # CHECK IF (Main.fibonacci@ret.0) was put in the right place. Step through assembly code and 
+    # try to see what's going wrong.
 ############################# Now do the translation. #####################
 if True:
 
     # First create the bootstrap code (see p. 162 for pseudocode)
     initialize_SP = ['// Initialize SP','@256','D=A','@SP','M=D']
-    call_Sys_init = ['// call Sys.init','@Sys.init','0;JMP'] # Is that sufficient?
-    hack_code = initialize_SP + call_Sys_init
+    reposition_LCL = ['// Reposition LCL', '@SP','D=M','@LCL','M=D']
+    call_Sys_init = reposition_LCL + ['// call Sys.init','@Sys.init','0;JMP'] # Is that sufficient?
+    hack_code = initialize_SP + call_Sys_init # Warning: SimpleFunction.tst and earlier tests assume you are NOT calling Sys.init.
 
-    breakpoint()
     # Now translate all of the given .vm files.
     s = sys.argv[1]
     if s.endswith('.vm'):
