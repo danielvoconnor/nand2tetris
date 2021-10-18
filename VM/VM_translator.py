@@ -5,11 +5,10 @@
 import sys
 import os
 
-# infinite_loop = ['(INFINITELOOP)','@INFINITELOOP','0;JMP']
 push_D = ['@SP','A=M','M=D','@SP','M=M+1']
 push_0 = ['@SP','A=M','M=0','@SP','M=M+1']
 segment_names = {'local':'LCL','argument':'ARG','this':'THIS','that':'THAT'}
-logic_op_count = 0
+logic_op_count = 0 # Isn't there some way to avoid needing this counter?
 
 def write_push(segment, i):
     # I'll assume i is already a string, rather than an int
@@ -34,7 +33,6 @@ def write_push(segment, i):
 
     return comment + commands
    
-#pop_to_R13 = ['@SP','M=M-1', 'A=M', 'D=M', '@R13', 'M=D']
 pop_to_D = ['// Now we pop to D','@SP','M=M-1', 'A=M', 'D=M','// Finished popping to D']
 def write_pop(segment, i):
     # I'll assume i is already a string, rather than an int
@@ -188,7 +186,6 @@ if True:
 
     # First create the bootstrap code (see p. 162 for pseudocode)
     initialize_SP = ['// Initialize SP','@256','D=A','@SP','M=D']
-    reposition_LCL = ['// Reposition LCL', '@SP','D=M','@LCL','M=D']
     call_Sys_init = write_call('Sys.init',0,'VM_bootstrap_code',0)
     hack_code = initialize_SP + call_Sys_init # Warning: SimpleFunction.tst and earlier tests assume you are NOT calling Sys.init.
 
@@ -201,7 +198,6 @@ if True:
         if s[-1] == '/': s = s[:-1]
         fname_list = [s + '/' + fname for fname in os.listdir(s) if fname.endswith('.vm')]
         fname_out = s + '/' + s.split('/')[-1] + '.asm'
-    print('fname_out is: ' + fname_out)
 
     for fname in fname_list:
 
