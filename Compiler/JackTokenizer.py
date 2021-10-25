@@ -8,44 +8,30 @@ f.close()
 
 # Remove /* ... */ style comments from the code
 code_without_comments = ''
+tail = code
+while tail != '':
 
-comment_flag = False
-i = 0
-while i < len(code):
-
-    if (i <= len(code) - 2) and (code[i:(i+2)] == '/*'):
-        comment_flag = True
-        i = i + 2 
-    if (i >= 2) and (code[i-2:i] == '*/'):
-        comment_flag = False
-    
-    if comment_flag == False:
-        code_without_comments = code_without_comments + code[i]
-
-    i = i + 1
+    parts = tail.partition('/*')
+    code_without_comments = code_without_comments + parts[0]
+    tail = parts[2].partition('*/')[2]
 
 code = code_without_comments
 
 # Remove // style comments from the code
 code_without_comments = ''
+tail = code
+while tail != '':
 
-comment_flag = False
-i = 0
-while i < len(code):
+    parts = tail.partition('//')
+    code_without_comments = code_without_comments + parts[0]
+    tail = parts[2]
 
-    if (i <= len(code) - 2) and (code[i:(i+2)] == '//'):
-        comment_flag = True
-        i = i + 2 
-    if comment_flag == True and code[i] == '\n':
-        comment_flag = False
-        continue
-    
-    if comment_flag == False:
-        code_without_comments = code_without_comments + code[i]
-
-    i = i + 1
+    parts = tail.partition('\n')
+    tail = parts[1] + parts[2]
 
 code = code_without_comments
+
+
 
 check_file = open('code_without_comments.jack','w')
 check_file.write(code_without_comments)
