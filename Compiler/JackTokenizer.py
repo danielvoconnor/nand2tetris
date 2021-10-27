@@ -1,7 +1,11 @@
 import sys
 
 # Now tokenize the code
+keywords = ['class','constructor','function','method','field','static',\
+            'var','int','char','boolean','void','true','false','null',\
+            'this','let','do','if','else','while','return']
 symbols = ['{','}','(',')','[',']','.',',',';','+','-','*','/','&','|','<','>','=','~']
+special_symbols ={'<':'&lt','>':'&gt','"':'&quot','&':'&amp'} # See p. 208 in nand2tetris
 
 def extract_token(code):
     # code is a string containing the contents of a .jack file
@@ -10,42 +14,42 @@ def extract_token(code):
 
     code = code.strip()
     if len(code) == 1:
-        return code, ''
-
-    if code[0] == '"':
+        token = code
+        token_type = 'symbol'
+        code = ''
+    elif code[0] == '"':
         parts = code[1:].partition('"')
         token = parts[0]
+        token_type = 'stringConst'
         code = parts[2]
-        return token, code
-
-    if code[0] in symbols:
-
+    elif code[0] in symbols:
         token = code[0]
+        if token in special_symbols:
+            token = special_symbols[token]
+        token_type = 'symbol'
         code = code[1:]
-        return token, code
-
-    if code[0].isdigit():
-
+    elif code[0].isdigit():
         token = ''
         i = 0
         while code[i].isdigit():
             token = token + code[i]
             i = i + 1
         code = code[i:]
-        return token, code
+        token_type = 'intConst'
+    else:
+        token = ''
+        i = 0
+        while (code[i] not in symbols) and (not code[i].isspace()):
+            token = token + code[i]
+            i = i + 1
+        code = code[i:]
 
-    token = ''
-    i = 0
-    while (code[i] not in symbols) and (not code[i].isspace()):
-        token = token + code[i]
-        i = i + 1
+        if token in keywords:
+            token_type = 'keyword'
+        else:
+            token_type = 'identifier'
 
-    code = code[i:]
-    return token, code
-
-    print('ERROR: TOKEN EXTRACTION FAILED')
-    sys.exit()
-
+    return token, token_type, code
 
 
 if True:
