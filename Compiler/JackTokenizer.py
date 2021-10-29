@@ -1,11 +1,12 @@
 import sys
+import os
 
 # Now tokenize the code
 keywords = ['class','constructor','function','method','field','static',\
             'var','int','char','boolean','void','true','false','null',\
             'this','let','do','if','else','while','return']
 symbols = ['{','}','(',')','[',']','.',',',';','+','-','*','/','&','|','<','>','=','~']
-special_symbols ={'<':'&lt','>':'&gt','"':'&quot','&':'&amp'} # See p. 208 in nand2tetris
+special_symbols ={'<':'&lt;','>':'&gt;','"':'&quot;','&':'&amp;'} # See p. 208 in nand2tetris
 
 def extract_token(code):
     # code is a string containing the contents of a .jack file
@@ -20,7 +21,7 @@ def extract_token(code):
     elif code[0] == '"':
         parts = code[1:].partition('"')
         token = parts[0]
-        token_type = 'stringConst'
+        token_type = 'stringConstant'
         code = parts[2]
     elif code[0] in symbols:
         token = code[0]
@@ -35,7 +36,7 @@ def extract_token(code):
             token = token + code[i]
             i = i + 1
         code = code[i:]
-        token_type = 'intConst'
+        token_type = 'integerConstant'
     else:
         token = ''
         i = 0
@@ -51,13 +52,8 @@ def extract_token(code):
 
     return token, token_type, code
 
-
-if True:
-    # Read the code to be tokenized into a string.
-    fname = sys.argv[1]
-    f = open(fname)
-    code = f.read()
-    f.close()
+def remove_comments(code):
+    # code is a string containing the contents of a .Jack file.
 
     # Remove /* ... */ style comments from the code
     code_without_comments = ''
@@ -84,13 +80,53 @@ if True:
 
     code = code_without_comments
 
+    return code
 
-
-    check_file = open('code_without_comments.jack','w')
-    check_file.write(code_without_comments)
-    check_file.close()
-
+def tokenize(code):
+    # code is a string containing the contents of a .Jack file.
+    code = remove_comments(code).strip()
     tokens = []
+    token_types = []
+    while code != '':
+        token, token_type, code = extract_token(code)
+        tokens.append(token)
+        token_types.append(token_type)
+
+    return tokens, token_types
+
+
+if True:
+    # Read the code to be tokenized into a string.
+    code_dir = sys.argv[1]
+    if code_dir[-1] != '/':
+        code_dir = code_dir + '/'
+
+    fnames = os.listdir(code_dir)
+    for fname in fnames:
+        if fname.endswith('.jack'):
+            
+            full_name = code_dir + fname
+
+            f = open(full_name)
+            code = f.read()
+            f.close()
+
+            tokens, token_types = tokenize(code)
+
+            xml = '<tokens>' + '\n'
+            for i in range(len(tokens)):
+
+                token = tokens[i]
+                token_type = token_types[i]
+                xml = xml + '<' + token_type + '> ' + \
+                        token + ' </' + token_type + '>' + '\n'
+            xml = xml + '</tokens>'
+
+            fname_out = fname[:-5].split('/')[-1] + 'T.xml'
+            xml_file = open(fname_out,'w')
+            xml_file.write(xml)
+            xml_file.close()
+
 
 
 
