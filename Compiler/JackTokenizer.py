@@ -1,17 +1,17 @@
 import sys
 import os
 
-# Now tokenize the code
-keywords = ['class','constructor','function','method','field','static',\
-            'var','int','char','boolean','void','true','false','null',\
-            'this','let','do','if','else','while','return']
-symbols = ['{','}','(',')','[',']','.',',',';','+','-','*','/','&','|','<','>','=','~']
-special_symbols ={'<':'&lt;','>':'&gt;','"':'&quot;','&':'&amp;'} # See p. 208 in nand2tetris
-
 def extract_token(code):
     # code is a string containing the contents of a .jack file
     # I'll assume that comments have already been removed.
     # I'll also assume code is not pure whitespace.
+
+    keywords = ['class','constructor','function','method','field','static',\
+                'var','int','char','boolean','void','true','false','null',\
+                'this','let','do','if','else','while','return']
+    symbols = ['{','}','(',')','[',']','.',',',';','+','-','*','/','&','|','<','>','=','~']
+    special_symbols ={'<':'&lt;','>':'&gt;','"':'&quot;','&':'&amp;'} 
+    # These special symbols are discussed on p. 208 in nand2tetris.
 
     code = code.strip()
     if len(code) == 1:
@@ -84,6 +84,7 @@ def remove_comments(code):
 
 def tokenize(code):
     # code is a string containing the contents of a .Jack file.
+
     code = remove_comments(code).strip()
     tokens = []
     token_types = []
