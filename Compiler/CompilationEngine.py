@@ -21,5 +21,42 @@ def compile_class(tokens,token_types):
 
     return xml
 
-# PICK UP HERE. FINISH WRITING THIS AND TEST IT.
+def compile_classVarDec(tokens,token_types):
+
+    xml = ['<keyword> ' + tokens[0] + ' </keyword>', '<type> ' + tokens[1] + ' </type>',\
+          ['<varName> ' + tokens[2] + ' </varName>']
+
+    i = 3
+    while tokens[i] == ',':
+        xml = xml + ['<symbol> , </symbol>', '<varName> ' + tokens[i+1] + ' </varName>']
+        i = i+2
+
+    xml = xml + ['<symbol> ; </symbol>']
+    tokens = tokens[i+1:]
+    token_types = token_types[i+1,:]
+
+    return xml, tokens, token_types
+
+def compile_subroutineDec(tokens,token_types):
+
+    xml = ['<keyword> ' + tokens[0] + '</keyword>']
+    if tokens[1] == 'void':
+        xml = xml + ['<keyword> void </keyword>']
+    else:
+        xml = xml + ['<type> ' + tokens[1] + ' </type>']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
