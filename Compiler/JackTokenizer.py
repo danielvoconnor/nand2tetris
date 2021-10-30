@@ -96,7 +96,7 @@ def tokenize(code):
     return tokens, token_types
 
 
-if True:
+if __name__ == '__main__':
     # Read the code to be tokenized into a string.
     code_dir = sys.argv[1]
     if code_dir[-1] != '/':
