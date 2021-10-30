@@ -2,11 +2,14 @@
 
 def compile_class(tokens,token_types):
 
-    xml = ['<class>','<classname> ' + tokens[1] + '</classname>'] + \
-          ['<symbol> { </symbol>']
+    xml = ['<class>']
+    xml_className, tokens, token_types = compile_className(tokens[1:],token_types[1:])
+    xml = xml + xml_className
 
-    tokens = tokens[3:]
-    token_types = token_types[3:]
+    xml = xml + ['<symbol> { </symbol>']
+    tokens = tokens[1:]
+    token_types = token_types[1:]
+
     while tokens[0] in ['static','field']:
 
         xml_classVarDec, tokens, token_types = compile_classVarDec(tokens,token_types)
@@ -21,10 +24,17 @@ def compile_class(tokens,token_types):
 
     return xml
 
+def compile_className(tokens,token_types):
+
+    xml = ['<className>','<identifier> ' + tokens[0] + ' </identifier>', '</className>']
+    return xml, tokens[1:], token_types[1:]
+
 def compile_classVarDec(tokens,token_types):
-    
+    # PICK UP HERE. I NEED A compile_type FUNCTION. 
+    # EACH NONTERMINAL ELEMENT NEEDS ITS OWN OPENING AND CLOSING TAGS.
+    # BE CONSISTENT ABOUT THAT.
     xml = ['<classVarDec>', '<keyword> ' + tokens[0] + ' </keyword>', \
-           '<type> ' + tokens[1] + ' </type>',['<varName> ' + tokens[2] + ' </varName>']
+           '<type> ' + tokens[1] + ' </type>','<varName> ' + tokens[2] + ' </varName>']
 
     i = 3
     while tokens[i] == ',':
@@ -57,10 +67,7 @@ def compile_subroutineDec(tokens,token_types):
     return xml, tokens, token_types
 
 
-
-
-
-
+    # PICK UP HERE. WRITE compile_parameterList and compile_subroutineBody.
 
 
 
