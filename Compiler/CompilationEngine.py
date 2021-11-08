@@ -1,3 +1,5 @@
+import sys
+
 def xml_for_type(token):
 
     if token in ['int','char','boolean']:
@@ -77,9 +79,78 @@ def compile_parameterList(tokens):
         xml = []
         return xml, tokens
 
-# PICK UP HERE. WRITE compile_subroutineBody, ETC.
+def compile_subroutineBody(tokens):
+
+    xml = ['<symbol> { </symbol>']
+    tokens = tokens[1:]
+    while tokens[0] == 'var':
+        xml_varDec, tokens = compile_varDec(tokens)
+        xml = xml + xml_varDec
+
+    xml_statements, tokens = compile_statements(tokens)
+    xml = xml + xml_statements
+
+    xml = xml + ['<symbol> } </symbol>']
+
+    return xml, tokens[1:]
+
+def compile_varDec(tokens):
+
+    xml = ['<keyword> var </keyword>',xml_for_type(tokens[1]),\
+           '<identifier> ' + tokens[2] + '</identifier>']
+
+    tokens = tokens[3:]
+    while(tokens[0] == ','):
+        xml = xml + ['<symbol> , </symbol>','<identifier> ' + tokens[1] + ' </identifier>']
+        tokens = tokens[2:]
+
+    xml = xml + ['<symbol> ; </symbol>']
+
+    return xml, tokens[1:]
+
+def compile_statements(tokens):
+
+    while tokens[0] in ['let','if','while','do','return']:
+
+        if tokens[0] == 'let':
+            xml, tokens = compile_let(tokens)
+        elif tokens[0] == 'if':
+            xml, tokens = compile_if(tokens)
+        elif tokens[0] == 'while':
+            xml, tokens = compile_while(tokens)
+        elif tokens[0] == 'do':
+            xml, tokens = compile_do(tokens)
+        elif tokens[0] == 'return':
+            xml, tokens = compile_return(tokens)
+        else:
+            print('ERROR: tokens[0] does not match any statement.')
+            sys.exit()
+
+        return xml, tokens
+
+def compile_let(tokens):
+
+    xml = ['<keyword> let </keyword>','<identifier> ' + tokens[1] + ' </identifier>']
+    if tokens[2] == '[':
+        xml = xml + ['<symbol> [ </symbol>']
+        xml_expression, tokens = compile_expression(tokens[3:])
+        xml = xml_expression + ['<symbol> ] </symbol>']
+        tokens = tokens[1:]
+
+    xml = xml + ['<symbol> = </symbol>']
+    xml_expression, tokens = compile_expression(tokens[1:])
+    xml = xml + xml_expression + ['<symbol> ; </symbol>']
+
+    return xml, tokens[1:]
 
 
+
+
+
+
+
+
+    
 
 
 
