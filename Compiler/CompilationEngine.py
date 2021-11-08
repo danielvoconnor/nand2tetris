@@ -175,6 +175,29 @@ def compile_while(tokens):
     xml = xml + xml_statements + ['<symbol> } </symbol>']
     return xml, tokens[1:]
 
+def compile_do(tokens):
+
+    xml = ['<keyword> do </keyword>']
+    xml_subroutine, tokens = compile_term(tokens[1:])
+    xml = xml + xml_subroutine + ['<symbol> ; </symbol>']
+
+    return xml, tokens[1:]
+
+def compile_return(tokens):
+
+    xml = ['<keyword> return </keyword>']
+    tokens = tokens[1:]
+
+    if tokens[0] != ';':
+        xml_expression, tokens = compile_expression(tokens)
+        xml = xml + xml_expression
+
+    xml = xml + ['<symbol> ; </symbol>']
+    return xml, tokens[1:]
+
+
+
+
 
 
 
