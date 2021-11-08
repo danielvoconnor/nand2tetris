@@ -166,6 +166,17 @@ def compile_if(tokens):
 
     return xml, tokens
 
+def compile_while(tokens):
+
+    xml = ['<keyword> while </keyword>','<symbol> ( </symbol>']
+    xml_expression, tokens = compile_expression(tokens[2:])
+    xml = xml + xml_expression + ['<symbol> ) </symbol>','<symbol> { </symbol>']
+    xml_statements, tokens = compile_statements(tokens[2:])
+    xml = xml + xml_statements + ['<symbol> } </symbol>']
+    return xml, tokens[1:]
+
+
+
 
     
 
