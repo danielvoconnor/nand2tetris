@@ -110,23 +110,29 @@ def compile_varDec(tokens):
 
 def compile_statements(tokens):
 
+    xml = []
     while tokens[0] in ['let','if','while','do','return']:
 
         if tokens[0] == 'let':
-            xml, tokens = compile_let(tokens)
+            xml_let, tokens = compile_let(tokens)
+            xml = xml + xml_let
         elif tokens[0] == 'if':
-            xml, tokens = compile_if(tokens)
+            xml_if, tokens = compile_if(tokens)
+            xml = xml + xml_if
         elif tokens[0] == 'while':
-            xml, tokens = compile_while(tokens)
+            xml_while, tokens = compile_while(tokens)
+            xml = xml + xml_while
         elif tokens[0] == 'do':
-            xml, tokens = compile_do(tokens)
+            xml_do, tokens = compile_do(tokens)
+            xml = xml + xml_do
         elif tokens[0] == 'return':
-            xml, tokens = compile_return(tokens)
+            xml_return, tokens = compile_return(tokens)
+            xml = xml + xml_return
         else:
             print('ERROR: tokens[0] does not match any statement.')
             sys.exit()
 
-        return xml, tokens
+    return xml, tokens
 
 def compile_let(tokens):
 
@@ -142,6 +148,26 @@ def compile_let(tokens):
     xml = xml + xml_expression + ['<symbol> ; </symbol>']
 
     return xml, tokens[1:]
+
+def compile_if(tokens):
+
+    xml = ['<keyword> if </keyword>','<symbol> ( </symbol>']
+    xml_expression, tokens = compile_expression(tokens[2:])
+    xml = xml + xml_expression + ['<symbol> ) </symbol>','<symbol> { </symbol>']
+    xml_statements, tokens = compile_statements(tokens[2:])
+    xml = xml + xml_statements + ['<symbol> } </symbol>']
+    tokens = tokens[1:]
+
+    if tokens[0] == 'else':
+        xml = xml + ['<symbol> { </symbol>']
+        xml_statements, tokens = compile_statements(tokens[1:])
+        xml = xml + xml_statements + ['<symbol> } </symbol>']
+        tokens = tokens[1:]
+
+    return xml, tokens
+
+
+    
 
 
 
