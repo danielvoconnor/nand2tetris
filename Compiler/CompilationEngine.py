@@ -195,8 +195,57 @@ def compile_return(tokens):
     xml = xml + ['<symbol> ; </symbol>']
     return xml, tokens[1:]
 
+ops = ['+','-','*','/','&','|','<','>','=']
+def compile_expression(tokens):
 
+    xml, tokens = compile_term(tokens)
+    if tokens[0] in ops:
+        xml = xml + ['<symbol> ' + tokens[0] + ' </symbol>']
+        xml_term, tokens = compile_term(tokens[1:])
+        xml = xml + xml_term
 
+    return xml, tokens
+
+keywords = ['class','constructor','function','method','field','static',\
+            'var','int','char','boolean','void','true','false','null',\
+            'this','let','do','if','else','while','return']
+keyword_constants = ['true','false','null','this']
+unary_ops = ['-','~']
+
+def compile_term(tokens):
+    # I'll assume stringConstant tokens include the quotation marks.
+
+    if tokens[0] in keyword_constants:
+        xml = ['<keyword> ' + tokens[0] + '</keyword>']
+        tokens = tokens[1:]
+    elif tokens[0][0] == '"':
+        xml = ['<stringConstant> ' + tokens[0][1:-1] + ' </stringConstant>']
+        tokens = tokens[1:]
+    elif tokens[0][0].isdigit():
+        xml = ['<integerConstant> ' + tokens[0] + ' </integerConstant>']
+    elif tokens[0] == '(':
+        xml_expression, tokens = compile_expression(tokens[1:])
+        xml = ['<symbol> ( </symbol>'] + xml_expression + ['<symbol> ) </symbol>']
+        tokens = tokens[1:]
+    elif tokens[0] in unary_ops:
+        xml = ['<symbol> ' + tokens[0] + ' </symbol>']
+        xml_term, tokens = compile_term(tokens[1:])
+        xml = xml + xml_term
+    elif tokens[1] == '[':
+        xml = ['<identifier> ' + tokens[0] + ' </identifier>', '<symbol> [ </symbol>']
+        xml_expression, tokens = compile_expression(tokens[2:])
+        xml = xml + xml_expression + ['<symbol> ] </symbol>']
+        tokens = tokens[1:]
+    elif tokens[1] == '(':
+        xml, tokens = compile_subroutineCall(tokens)
+        # PICK UP HERE. compile_subroutineCall SHOULD NOT BE A FUNCTION.
+        # JUST PARSE THE SUBROUTINE CALL RIGHT HERE.
+
+    else:
+        xml = ['<identifier> ' + tokens[0] + ' </identifier>']
+        tokens = tokens[1:]
+
+    return xml, tokens
 
 
 
