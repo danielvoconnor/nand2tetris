@@ -1,4 +1,5 @@
 import sys
+import os
 import JackTokenizer
 
 def xml_for_type(token):
@@ -70,17 +71,17 @@ def compile_parameterList(tokens):
 
         xml = ['<parameterList>']
         xml = xml + [xml_for_type(tokens[0]),'<identifier> ' + tokens[1] + ' </identifier>']
-        i = 2
-        while tokens[i] == ',':
-            xml = xml + ['<symbol> , </symbol>',xml_for_type(tokens[i+1])]
-            i = i + 2
-        tokens = tokens[i:]
+        tokens = tokens[2:]
+        while tokens[0] == ',':
+            xml = xml + ['<symbol> , </symbol>',xml_for_type(tokens[1])]
+            xml = xml + ['<identifier> ' + tokens[2] + ' </identifier>']
+            tokens = tokens[3:]
 
         xml = xml + ['</parameterList>']
         return xml, tokens
 
     else:
-        xml = []
+        xml = ['<parameterList> ', '</parameterList>']
         return xml, tokens
 
 def compile_subroutineBody(tokens):
@@ -215,7 +216,8 @@ def compile_return(tokens):
     xml = xml + ['<symbol> ; </symbol>','</returnStatement>']
     return xml, tokens[1:]
 
-ops = ['+','-','*','/','&','|','<','>','=']
+# ops = ['+','-','*','/','&','|','<','>','=']
+ops = ['+','-','*','/','&amp;','|','&lt;','&gt;','=']
 def compile_expression(tokens):
 
     xml = ['<expression>']
@@ -299,26 +301,29 @@ def compile_expressionList(tokens):
 
 if __name__ == '__main__':
     
-    fname = sys.argv[1]
-    print(fname)
-    f = open(fname)
-    s = f.read()
-    f.close()
-
-    tokens, token_types = JackTokenizer.tokenize(s)
-    for i in range(len(token_types)):
-        if token_types[i] == 'stringConstant':
-            tokens[i] = '"' + tokens[i] + '"'
-
-    xml = compile_class(tokens)
-    xml = [s + '\n' for s in xml]
-
-    fname_out = fname.rpartition('/')[-1]
-    fname_out = fname_out[:-5] + '_myXml.xml'
-    f = open(fname_out,'w')
-    f.writelines(xml)
-    f.close()
+    directory = sys.argv[1]
+    jack_files = [fname for fname in os.listdir(directory) if fname.endswith('.jack')]
     
+    for fname in jack_files:
+
+        print('Now compiling: ', directory + fname)
+        f = open(directory + fname)
+        s = f.read()
+        f.close()
+
+        tokens, token_types = JackTokenizer.tokenize(s)
+        for i in range(len(token_types)):
+            if token_types[i] == 'stringConstant':
+                tokens[i] = '"' + tokens[i] + '"'
+
+        xml = compile_class(tokens)
+        xml = [s + '\n' for s in xml]
+
+        fname_out = directory + fname[:-5] + '_myXml.xml'
+        f = open(fname_out,'w')
+        f.writelines(xml)
+        f.close()
+        
 
 
 
