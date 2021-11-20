@@ -1,6 +1,7 @@
 import sys
 import os
 import JackTokenizer
+# This code has now passed all of the chapter 10 tests.
 
 def xml_for_type(token):
 
