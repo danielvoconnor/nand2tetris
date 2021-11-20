@@ -1,4 +1,5 @@
 import sys
+import JackTokenizer
 
 def xml_for_type(token):
 
@@ -11,6 +12,8 @@ def xml_for_type(token):
    
 
 def compile_class(tokens):
+
+    breakpoint()
 
     xml = ['<class>','<keyword> class </keyword>']
     xml = xml + ['<identifier> ' + tokens[1] + ' </identifier>']
@@ -47,7 +50,7 @@ def compile_classVarDec(tokens):
 
 def compile_subroutineDec(tokens):
 
-    xml = ['<subroutineDec>', '<keyword> ' + tokens[0] + '</keyword>']
+    xml = ['<subroutineDec>', '<keyword> ' + tokens[0] + ' </keyword>']
     if tokens[1] == 'void':
         xml = xml + ['<keyword> void </keyword>']
     else:
@@ -59,7 +62,7 @@ def compile_subroutineDec(tokens):
     xml_parameterList, tokens =  compile_parameterList(tokens) 
     xml = xml + xml_parameterList + ['<symbol> ) </symbol>']
     xml_subroutineBody, tokens = compile_subroutineBody(tokens[1:])
-    xml = xml + xml_subroutineBody
+    xml = xml + xml_subroutineBody + ['</subroutineDec>']
 
     return xml, tokens
 
@@ -67,12 +70,15 @@ def compile_parameterList(tokens):
 
     if tokens[0] != ')':
 
-        xml = [xml_for_type(tokens[0]),'<identifier> ' + tokens[1] + ' </identifier>']
+        xml = ['<parameterList>']
+        xml = xml + [xml_for_type(tokens[0]),'<identifier> ' + tokens[1] + ' </identifier>']
         i = 2
         while tokens[i] == ',':
             xml = xml + ['<symbol> , </symbol>',xml_for_type(tokens[i+1])]
             i = i + 2
         tokens = tokens[i:]
+
+        xml = xml + ['</parameterList>']
         return xml, tokens
 
     else:
@@ -81,7 +87,7 @@ def compile_parameterList(tokens):
 
 def compile_subroutineBody(tokens):
 
-    xml = ['<symbol> { </symbol>']
+    xml = ['<subroutineBody>','<symbol> { </symbol>']
     tokens = tokens[1:]
     while tokens[0] == 'var':
         xml_varDec, tokens = compile_varDec(tokens)
@@ -90,27 +96,27 @@ def compile_subroutineBody(tokens):
     xml_statements, tokens = compile_statements(tokens)
     xml = xml + xml_statements
 
-    xml = xml + ['<symbol> } </symbol>']
+    xml = xml + ['<symbol> } </symbol>','</subroutineBody>']
 
     return xml, tokens[1:]
 
 def compile_varDec(tokens):
 
-    xml = ['<keyword> var </keyword>',xml_for_type(tokens[1]),\
-           '<identifier> ' + tokens[2] + '</identifier>']
+    xml = ['<varDec>','<keyword> var </keyword>',xml_for_type(tokens[1]),\
+           '<identifier> ' + tokens[2] + ' </identifier>']
 
     tokens = tokens[3:]
     while(tokens[0] == ','):
         xml = xml + ['<symbol> , </symbol>','<identifier> ' + tokens[1] + ' </identifier>']
         tokens = tokens[2:]
 
-    xml = xml + ['<symbol> ; </symbol>']
+    xml = xml + ['<symbol> ; </symbol>','</varDec>']
 
     return xml, tokens[1:]
 
 def compile_statements(tokens):
 
-    xml = []
+    xml = ['<statements>']
     while tokens[0] in ['let','if','while','do','return']:
 
         if tokens[0] == 'let':
@@ -131,27 +137,30 @@ def compile_statements(tokens):
         else:
             print('ERROR: tokens[0] does not match any statement.')
             sys.exit()
+    xml = xml + ['</statements>']
 
     return xml, tokens
 
 def compile_let(tokens):
 
-    xml = ['<keyword> let </keyword>','<identifier> ' + tokens[1] + ' </identifier>']
-    if tokens[2] == '[':
+    xml = ['<letStatement>']
+    xml = xml + ['<keyword> let </keyword>','<identifier> ' + tokens[1] + ' </identifier>']
+    tokens = tokens[2:]
+    if tokens[0] == '[':
         xml = xml + ['<symbol> [ </symbol>']
-        xml_expression, tokens = compile_expression(tokens[3:])
-        xml = xml_expression + ['<symbol> ] </symbol>']
+        xml_expression, tokens = compile_expression(tokens[1:])
+        xml = xml + xml_expression + ['<symbol> ] </symbol>']
         tokens = tokens[1:]
-
+    
     xml = xml + ['<symbol> = </symbol>']
     xml_expression, tokens = compile_expression(tokens[1:])
-    xml = xml + xml_expression + ['<symbol> ; </symbol>']
+    xml = xml + xml_expression + ['<symbol> ; </symbol>','</letStatement>']
 
     return xml, tokens[1:]
 
 def compile_if(tokens):
 
-    xml = ['<keyword> if </keyword>','<symbol> ( </symbol>']
+    xml = ['<ifStatement>','<keyword> if </keyword>','<symbol> ( </symbol>']
     xml_expression, tokens = compile_expression(tokens[2:])
     xml = xml + xml_expression + ['<symbol> ) </symbol>','<symbol> { </symbol>']
     xml_statements, tokens = compile_statements(tokens[2:])
@@ -164,45 +173,62 @@ def compile_if(tokens):
         xml = xml + xml_statements + ['<symbol> } </symbol>']
         tokens = tokens[1:]
 
+    xml = xml + ['</ifStatement>']
     return xml, tokens
 
 def compile_while(tokens):
 
-    xml = ['<keyword> while </keyword>','<symbol> ( </symbol>']
+    xml = ['<whileStatement>','<keyword> while </keyword>','<symbol> ( </symbol>']
     xml_expression, tokens = compile_expression(tokens[2:])
     xml = xml + xml_expression + ['<symbol> ) </symbol>','<symbol> { </symbol>']
     xml_statements, tokens = compile_statements(tokens[2:])
-    xml = xml + xml_statements + ['<symbol> } </symbol>']
+    xml = xml + xml_statements + ['<symbol> } </symbol>','</whileStatement>']
     return xml, tokens[1:]
 
 def compile_do(tokens):
 
-    xml = ['<keyword> do </keyword>']
-    xml_subroutine, tokens = compile_term(tokens[1:])
-    xml = xml + xml_subroutine + ['<symbol> ; </symbol>']
+    xml = ['<doStatement>','<keyword> do </keyword>']
+    tokens = tokens[1:]
+    if tokens[1] == '(':
+        xml = xml + ['<identifier> ' + tokens[0] + ' </identifier>']
+        tokens = tokens[1:]
+    else:
+        xml = xml + ['<identifier> ' + tokens[0] + ' </identifier>','<symbol> . </symbol>']
+        xml = xml + ['<identifier> ' + tokens[2] + ' </identifier>']
+        tokens = tokens[3:]
 
-    return xml, tokens[1:]
+    xml = xml + ['<symbol> ( </symbol>']
+    xml_expressionList, tokens = compile_expressionList(tokens[1:])
+        
+    xml = xml + xml_expressionList + ['<symbol> ) </symbol>'] 
+    xml = xml + ['<symbol> ; </symbol>','</doStatement>'] 
+
+    return xml, tokens[2:]
 
 def compile_return(tokens):
 
-    xml = ['<keyword> return </keyword>']
+    xml = ['<returnStatement>','<keyword> return </keyword>']
     tokens = tokens[1:]
 
     if tokens[0] != ';':
         xml_expression, tokens = compile_expression(tokens)
         xml = xml + xml_expression
 
-    xml = xml + ['<symbol> ; </symbol>']
+    xml = xml + ['<symbol> ; </symbol>','</returnStatement>']
     return xml, tokens[1:]
 
 ops = ['+','-','*','/','&','|','<','>','=']
 def compile_expression(tokens):
 
-    xml, tokens = compile_term(tokens)
+    xml = ['<expression>']
+    xml_term, tokens = compile_term(tokens)
+    xml = xml + xml_term
     if tokens[0] in ops:
         xml = xml + ['<symbol> ' + tokens[0] + ' </symbol>']
         xml_term, tokens = compile_term(tokens[1:])
         xml = xml + xml_term
+
+    xml = xml + ['</expression>']
 
     return xml, tokens
 
@@ -216,7 +242,7 @@ def compile_term(tokens):
     # I'll assume stringConstant tokens include the quotation marks.
 
     if tokens[0] in keyword_constants:
-        xml = ['<keyword> ' + tokens[0] + '</keyword>']
+        xml = ['<keyword> ' + tokens[0] + ' </keyword>']
         tokens = tokens[1:]
     elif tokens[0][0] == '"':
         xml = ['<stringConstant> ' + tokens[0][1:-1] + ' </stringConstant>']
@@ -237,15 +263,67 @@ def compile_term(tokens):
         xml = xml + xml_expression + ['<symbol> ] </symbol>']
         tokens = tokens[1:]
     elif tokens[1] == '(':
-        xml, tokens = compile_subroutineCall(tokens)
-        # PICK UP HERE. compile_subroutineCall SHOULD NOT BE A FUNCTION.
-        # JUST PARSE THE SUBROUTINE CALL RIGHT HERE.
-
+        xml = ['<identifier> ' + tokens[0] + ' </identifier>','<symbol> ( </symbol>']
+        xml_expressionList, tokens = compile_expressionList(tokens[2:])
+        xml = xml + xml_expressionList
+        xml = xml + ['<symbol> ) </symbol>']
+        tokens = tokens[1:]
+    elif tokens[1] == '.':
+        xml = ['<identifier> ' + tokens[0] + ' </identifier>','<symbol> . </symbol>']
+        xml = xml + ['<identifier> ' + tokens[2] + ' </identifier>','<symbol> ( </symbol>']
+        xml_expressionList, tokens = compile_expressionList(tokens[4:])
+        xml = xml + xml_expressionList
+        xml = xml + ['<symbol> ) </symbol>']
+        tokens = tokens[1:]
     else:
         xml = ['<identifier> ' + tokens[0] + ' </identifier>']
         tokens = tokens[1:]
 
+    xml = ['<term>'] + xml + ['</term>']
+
     return xml, tokens
+
+def compile_expressionList(tokens):
+
+    xml = []
+    if tokens[0] != ')':
+        xml_expression, tokens = compile_expression(tokens)
+        xml = xml + xml_expression
+        while tokens[0] == ',':
+            xml = xml + ['<symbol> , </symbol>']
+            xml_expression, tokens = compile_expression(tokens[1:])
+            xml = xml + xml_expression
+
+    xml = ['<expressionList>'] + xml + ['</expressionList>']
+    return xml, tokens
+
+
+if __name__ == '__main__':
+    
+    fname = sys.argv[1]
+    print(fname)
+    f = open(fname)
+    s = f.read()
+    f.close()
+
+    tokens, token_types = JackTokenizer.tokenize(s)
+    for i in range(len(token_types)):
+        if token_types[i] == 'stringConstant':
+            tokens[i] = '"' + tokens[i] + '"'
+
+    xml = compile_class(tokens)
+    xml = [s + '\n' for s in xml]
+
+    breakpoint()
+    fname_out = fname.rpartition('/')[-1]
+    fname_out = fname_out[:-5] + '_myXml.xml'
+    f = open(fname_out,'w')
+    f.writelines(xml)
+    f.close()
+    
+
+
+
 
 
 
