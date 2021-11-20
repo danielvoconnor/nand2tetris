@@ -13,8 +13,6 @@ def xml_for_type(token):
 
 def compile_class(tokens):
 
-    breakpoint()
-
     xml = ['<class>','<keyword> class </keyword>']
     xml = xml + ['<identifier> ' + tokens[1] + ' </identifier>']
     xml = xml + ['<symbol> { </symbol>']
@@ -168,8 +166,8 @@ def compile_if(tokens):
     tokens = tokens[1:]
 
     if tokens[0] == 'else':
-        xml = xml + ['<symbol> { </symbol>']
-        xml_statements, tokens = compile_statements(tokens[1:])
+        xml = xml + ['<keyword> else </keyword>','<symbol> { </symbol>']
+        xml_statements, tokens = compile_statements(tokens[2:])
         xml = xml + xml_statements + ['<symbol> } </symbol>']
         tokens = tokens[1:]
 
@@ -249,6 +247,7 @@ def compile_term(tokens):
         tokens = tokens[1:]
     elif tokens[0][0].isdigit():
         xml = ['<integerConstant> ' + tokens[0] + ' </integerConstant>']
+        tokens = tokens[1:]
     elif tokens[0] == '(':
         xml_expression, tokens = compile_expression(tokens[1:])
         xml = ['<symbol> ( </symbol>'] + xml_expression + ['<symbol> ) </symbol>']
@@ -314,7 +313,6 @@ if __name__ == '__main__':
     xml = compile_class(tokens)
     xml = [s + '\n' for s in xml]
 
-    breakpoint()
     fname_out = fname.rpartition('/')[-1]
     fname_out = fname_out[:-5] + '_myXml.xml'
     f = open(fname_out,'w')
