@@ -11,7 +11,6 @@ def xml_for_type(token):
         xml = '<identifier> ' + token + ' </identifier>'
 
     return xml
-   
 
 def compile_class(tokens):
 
